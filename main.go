@@ -28,9 +28,17 @@ func RateLimiter() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := context.Background()
 		ip := c.ClientIP()
+		token := c.GetHeader("API_KEY")
+
+		//PASSAR VALIDAÇÃO PARA USECASE + INFRA
+		if token == "" || ip == "" {
+			log.Println(token, ip)
+			c.Next()
+			return
+		}
 
 		// Check if the key is already blocked
-		blocked, err := rdb.Get(ctx, ip+":blocked").Result()
+		blockedIP, err := rdb.Get(ctx, ip+":blocked").Result()
 		if err != nil && err != redis.Nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 			log.Println(err)
@@ -38,15 +46,23 @@ func RateLimiter() gin.HandlerFunc {
 			return
 		}
 
-		if blocked == "true" {
-			c.JSON(http.StatusTooManyRequests, gin.H{"error": "too many requests"})
-			log.Println("Rate limit exceeded and IP is blocked for a period:", ip)
+		blockedToken, err := rdb.Get(ctx, token+":blocked").Result()
+		if err != nil && err != redis.Nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			log.Println(err)
 			c.Abort()
 			return
 		}
 
-		// Rate limiting logic
-		res, err := limiter.Allow(ctx, ip, redis_rate.PerSecond(5))
+		if blockedIP == "true" || blockedToken == "true" {
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": "too many requests"})
+			log.Println("Rate limit exceeded for a period")
+			c.Abort()
+			return
+		}
+
+		// Rate limiting for Token
+		resToken, err := limiter.Allow(ctx, token, redis_rate.PerSecond(10))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 			log.Println(err)
@@ -54,14 +70,23 @@ func RateLimiter() gin.HandlerFunc {
 			return
 		}
 
-		log.Println("allowed:", res.Allowed, "remaining:", res.Remaining)
+		// Rate limiting for IP
+		resIP, err := limiter.Allow(ctx, ip, redis_rate.PerSecond(5))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			log.Println(err)
+			c.Abort()
+			return
+		}
 
-		if res.Allowed == 0 {
-			// Block the key for 1 minute when the rate limit is exceeded
-			_ = rdb.Set(ctx, ip+":blocked", "true", 10*time.Second).Err()
+		log.Println("Token allowed:", resToken.Allowed, "Token remaining:", resToken.Remaining)
+		log.Println("IP allowed:", resIP.Allowed, "IP remaining:", resIP.Remaining)
+
+		if resToken.Allowed == 0 {
+			_ = rdb.Set(ctx, token+":blocked", "true", 10*time.Second).Err()
 
 			c.JSON(http.StatusTooManyRequests, gin.H{"error": "too many requests"})
-			log.Println("Rate limit exceeded for IP:", ip)
+			log.Println("Rate limit exceeded for Token:", token)
 			c.Abort()
 			return
 		}
@@ -69,6 +94,7 @@ func RateLimiter() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
 func main() {
 	r := gin.Default()
 
