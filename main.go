@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"rate_limiter/config"
 	"time"
 
 	"log"
@@ -22,6 +23,8 @@ func init() {
 		Addr: "redis:6379",
 	})
 	limiter = redis_rate.NewLimiter(rdb)
+
+	config.LoadEnv()
 }
 
 func RateLimiter() gin.HandlerFunc {

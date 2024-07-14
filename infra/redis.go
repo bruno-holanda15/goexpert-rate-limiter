@@ -55,16 +55,16 @@ func (r *RedisInteractor) BlockKeyPerTime(ctx context.Context, key string, durat
 	return nil
 }
 
-func (r *RedisInteractor) SetLimitForKeyPerTime(ctx context.Context, key string, duration int, time string) (domain.LimitResult, error) {
+func (r *RedisInteractor) SetLimitForKeyPerTime(ctx context.Context, key string, rate int, time string) (domain.LimitResult, error) {
 	var rateForLimiter redis_rate.Limit
 
 	switch time{
 	case "minute":
-		rateForLimiter = redis_rate.PerMinute(duration)
+		rateForLimiter = redis_rate.PerMinute(rate)
 	case "second":
-		rateForLimiter = redis_rate.PerSecond(duration)
+		rateForLimiter = redis_rate.PerSecond(rate)
 	case "hour":
-		rateForLimiter = redis_rate.PerHour(duration)
+		rateForLimiter = redis_rate.PerHour(rate)
 	}
 
 	result, err := r.limiter.Allow(ctx, key, rateForLimiter)
