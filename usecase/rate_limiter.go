@@ -17,11 +17,11 @@ type OutputRateLimiter struct {
 }
 
 type RateLimiterUseCase struct {
-	limiter     RateLimiterInterface
+	limiter         RateLimiterInterface
 	timeTypeLimitIP string
-	rateLimitIP int
-	blockLimitTime int
-	timeTypeBlock string
+	rateLimitIP     int
+	blockLimitTime  int
+	timeTypeBlock   string
 }
 
 func NewRateLimiterUseCase(limiter RateLimiterInterface) *RateLimiterUseCase {
@@ -31,11 +31,11 @@ func NewRateLimiterUseCase(limiter RateLimiterInterface) *RateLimiterUseCase {
 	timeTypeBlock := getTimeTypeToBlock()
 
 	return &RateLimiterUseCase{
-		limiter:     limiter,
+		limiter:         limiter,
 		timeTypeLimitIP: timeTypeLimitIP,
-		rateLimitIP: rateLimitIP,
-		blockLimitTime: blockLimitTime,
-		timeTypeBlock: timeTypeBlock,
+		rateLimitIP:     rateLimitIP,
+		blockLimitTime:  blockLimitTime,
+		timeTypeBlock:   timeTypeBlock,
 	}
 }
 
@@ -79,7 +79,7 @@ func getRateLimitIP() int {
 }
 
 func getTimeTypeToLimitIP() string {
-	t := os.Getenv("TIME_LIMIT_IP")
+	t := os.Getenv("TIME_LIMIT_TYPE_IP")
 	if t == "" {
 		return "second"
 	}
@@ -95,7 +95,6 @@ func getTimeTypeToBlock() string {
 
 	return t
 }
-
 
 func getBlockLimitTime() int {
 	timeLimit := os.Getenv("BLOCK_LIMIT_TIME")
