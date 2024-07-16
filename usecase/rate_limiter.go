@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 )
 
 type InputRateLimiter struct {
@@ -28,6 +29,10 @@ func NewRateLimiterUseCase(limiter RateLimiterInterface) *RateLimiterUseCase {
 }
 
 func (r *RateLimiterUseCase) Execute(ctx context.Context, input InputRateLimiter) OutputRateLimiter {
+	if input.Item == "" {
+		return OutputRateLimiter{Err: errors.New("input empty")}
+	}
+	
 	blockItem, err := r.limiter.VerifyKeyBlock(ctx, input.Item)
 	if err != nil {
 		return OutputRateLimiter{Err: err}
