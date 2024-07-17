@@ -79,12 +79,15 @@ func RateLimiter(rateUseCase *usecase.RateLimiterUseCase, envs *config.Conf) gin
 			return
 		}
 
+		if !outputIP.AllowRequest && outputToken.AllowRequest {
+			log.Println("Rate limit exceeded for IP but NOT for Token", c.GetHeader("API_KEY"))
+		}
+
 		c.Next()
 	}
 }
 
 func main() {
-	r := gin.Default()
 	envs, err := config.LoadConfig(".")
 	if err != nil {
 		panic(err)
@@ -93,6 +96,7 @@ func main() {
 	redisRepository := infra.NewRedisInteractor(rdb)
 	rateLimiterUseCase := usecase.NewRateLimiterUseCase(redisRepository)
 
+	r := gin.Default()
 	r.Use(RateLimiter(rateLimiterUseCase, envs))
 
 	r.GET("/ping", func(c *gin.Context) {
