@@ -66,14 +66,14 @@ func RateLimiter(rateUseCase *usecase.RateLimiterUseCase, envs *config.Conf) gin
 		}
 
 		if !outputIP.AllowRequest && !outputToken.AllowRequest {
-			c.JSON(http.StatusTooManyRequests, gin.H{"error": "too many requests"})
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": "you have reached the maximum number of requests or actions allowed within a certain time frame"})
 			log.Println("Rate limit exceeded for Token and IP:", c.GetHeader("API_KEY"), c.ClientIP())
 			c.Abort()
 			return
 		}
 
 		if !outputToken.AllowRequest {
-			c.JSON(http.StatusTooManyRequests, gin.H{"error": "too many requests"})
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": "you have reached the maximum number of requests or actions allowed within a certain time frame"})
 			log.Println("Rate limit exceeded for Token:", c.GetHeader("API_KEY"))
 			c.Abort()
 			return
